@@ -184,17 +184,20 @@
 				const randomProblem = problemsThatSuit[randomIndex];
 
 
+				const container = document.createElement('div');
+				container.classList.add('links');
 				const anchor = document.createElement('a');
-				anchor.classList.add('links');
 				anchor.href = `http://www.codeforces.com/problemset/problem/${randomProblem.contestId}/${randomProblem.index}`;
 				anchor.textContent = `Problem ${randomProblem.index} from Contest Id ${randomProblem.contestId}`;
 				if (randomProblem.rating != undefined) anchor.textContent += ` with a rating of ${randomProblem.rating}`;
 				anchor.target = '_blank';
-				document.body.appendChild(anchor);
+				container.appendChild(anchor);
 
 
-				document.body.appendChild(document.createElement('br'));
-				document.body.appendChild(document.createElement('br'));
+				container.appendChild(document.createElement('br'));
+				container.appendChild(document.createElement('br'));
+
+				document.body.appendChild(container);
 
 				statusDiv.textContent = '';
 				statusDiv.style.display = 'none';
