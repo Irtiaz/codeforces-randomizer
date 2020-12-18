@@ -1,0 +1,156 @@
+<html>
+	
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Randomizer</title>
+
+	<style>
+		.options {
+			background-color: #ADEFD1FF;
+			color: #00203FFF;
+			border: 1px solid black;
+			border-radius: 10px;
+		}
+
+		#tutorial {
+			background-color: #FFD662FF;
+			color: #00539CFF;
+		}
+
+		body {
+			background-color: #97BC62FF;
+		}
+	</style>
+
+	</head>
+
+
+	<body onload="load()">
+		<div id="tutorial" onclick="this.style.display = 'none'">
+			If you don't mention any attribute the problem will be completely random in that attribute. For example if you don't choose any rating, random ratings will appear. Choosing no attribute (i.e. no specification in tags, index, rating) will make the problem completely random<br>
+
+			If you choose dp and greedy from tags and 1000 from rating, a random problem with a tag of 'dp' or 'greedy' (or both!) which has a rating of 1000 will be shown.<br>
+			Click this tutorial box to hide it.
+			<br><br>
+		</div>
+		<div id="status" style="display:none;">Loading<br></div>
+
+		<table border="1" id="table" width="100%">
+			<th>Tags</th>
+			<th>Index</th>
+			<th>Rating</th>
+		</table>
+		<br><br>
+
+		<input type="button" value="Generate Random Problem Link" onclick="randomize()">
+		<br><br>
+
+		<script>
+			let json = undefined;
+			
+			const tags = [];
+			const indices = [];
+			const ratings = [];
+
+			const selectedTags = [];
+			const selectedIndices = [];
+			const selectedRatings = [];
+
+			const statusDiv = document.getElementById('status');
+			const table = document.getElementById('table');
+
+			async function load() {
+				statusDiv.textContent = 'Loading ...';
+				statusDiv.style.display = 'block';
+
+				const response = await fetch('https://codeforces.com/api/problemset.problems');
+				json = await response.json();
+
+				for (let problem of json.result.problems) {
+					if (!indices.includes(problem.index)) indices.push(problem.index);
+					if (problem.rating !=undefined && !ratings.includes(problem.rating)) ratings.push(problem.rating);
+					for (let tag of problem.tags) {
+						if (!tags.includes(tag)) tags.push(tag);
+					}
+				}
+				indices.sort();
+				ratings.sort((a, b) => a - b);
+
+				const row = table.insertRow(1);
+				const cell1 = row.insertCell(0);
+				const cell2 = row.insertCell(1);
+				const cell3 = row.insertCell(2);
+
+				for (let t of tags) {
+					let id = t.replace(/ /g, '_');
+					cell1.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedTags)" id=${id}><label>${t}</label></span>&nbsp&nbsp&nbsp`;
+				}
+				
+				for (let i of indices) {
+					let id = i.replace(/ /g, '_');
+					cell2.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedIndices)" id=${id}><label>${i}</label></span>&nbsp&nbsp&nbsp`;
+				}
+				
+				for (let r of ratings) {
+					let id = ('' + r).replace(/ /g, '_');
+					cell3.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedRatings)" id=${id}><label>${r}</label></span>&nbsp&nbsp&nbsp`;
+				}
+				
+
+				statusDiv.style.display = 'none';
+			}
+
+
+			
+			function handleCheck(input, arr) {
+				statusDiv.textContent = '';
+				statusDiv.style.display = 'none';
+
+				if (input.checked) arr.push(input.id);
+				else arr.splice(arr.indexOf(input.id), 1);
+			}
+
+
+
+			function randomize() {
+				if (json == undefined) return;
+
+				statusDiv.textContent = 'Loading ...';
+				statusDiv.style.display = 'block';
+
+				const problemsThatSuit = [];
+				for (let problem of json.result.problems) {
+					if (selectedTags.length != 0 && problem.tags.filter(val => selectedTags.includes(val.replace(/ /g, '_'))).length == 0) continue;
+					if (selectedIndices.length != 0 && !selectedIndices.includes(problem.index)) continue;
+					if (selectedRatings.length != 0 && !selectedRatings.includes("" + problem.rating)) continue;
+					problemsThatSuit.push(problem);
+				}
+
+				if (problemsThatSuit.length == 0) {
+					statusDiv.textContent = 'No problem found with given conditions';
+					statusDiv.style.display = 'block';
+					return;
+				}
+
+				const randomIndex = parseInt(Math.random() * problemsThatSuit.length);
+				const randomProblem = problemsThatSuit[randomIndex];
+
+
+				const anchor = document.createElement('a');
+				anchor.href = `http://www.codeforces.com/problemset/problem/${randomProblem.contestId}/${randomProblem.index}`;
+				anchor.textContent = `Problem ${randomProblem.index} from Contest Id ${randomProblem.contestId}`;
+				if (randomProblem.rating != undefined) anchor.textContent += ` with a rating of ${randomProblem.rating}`;
+				anchor.target = '_blank';
+				document.body.appendChild(anchor);
+
+
+				document.body.appendChild(document.createElement('br'));
+				document.body.appendChild(document.createElement('br'));
+
+				statusDiv.textContent = '';
+				statusDiv.style.display = 'none';
+			}
+		</script>
+	</body>
+</html>
