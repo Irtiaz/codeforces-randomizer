@@ -11,6 +11,19 @@
 			color: #00203FFF;
 			border: 1px solid black;
 			border-radius: 10px;
+			padding: 4px;
+			font-size: 14pt;
+			cursor: pointer;
+		}
+
+
+		.options:hover, .options[checked="true"] {
+			background-color: blue;
+			color: white;
+		}
+
+		input {
+			font-size: 14pt;
 		}
 
 		#tutorial {
@@ -20,6 +33,7 @@
 
 		body {
 			background-color: #97BC62FF;
+			font-size: 14pt;
 		}
 	</style>
 
@@ -27,23 +41,25 @@
 
 
 	<body onload="load()">
-		<div id="tutorial" onclick="this.style.display = 'none'">
+		<div id="tutorial" onclick="this.parentNode.removeChild(this)">
 			If you don't mention any attribute the problem will be completely random in that attribute. For example if you don't choose any rating, random ratings will appear. Choosing no attribute (i.e. no specification in tags, index, rating) will make the problem completely random<br>
 
 			If you choose dp and greedy from tags and 1000 from rating, a random problem with a tag of 'dp' or 'greedy' (or both!) which has a rating of 1000 will be shown.<br>
 			Click this tutorial box to hide it.
 			<br><br>
 		</div>
-		<div id="status" style="display:none;">Loading<br></div>
 
 		<table border="1" id="table" width="100%">
-			<th>Tags</th>
-			<th>Index</th>
-			<th>Rating</th>
+			<th id="tagHeader" colspan="3">Tags</th>
+			<th id="indexHeader" colspan="6">Index</th>
+			<th id="ratingHeader" colspan="2">Rating</th>
 		</table>
 		<br><br>
 
-		<input type="button" value="Generate Random Problem Link" onclick="randomize()">
+		<div id="status" style="display:none;">Loading<br></div>
+
+		<input type="button" value="Generate Random Problem Link" onclick="randomize()">&nbsp&nbsp&nbsp
+		<input type="button" value="Clear Links" onclick="clearLinks()">
 		<br><br>
 
 		<script>
@@ -52,6 +68,10 @@
 			const tags = [];
 			const indices = [];
 			const ratings = [];
+
+			const tagsSpan = parseInt(document.getElementById('tagHeader').getAttribute('colspan'));
+			const indexSpan = parseInt(document.getElementById('indexHeader').getAttribute('colspan'));
+			const ratingSpan = parseInt(document.getElementById('ratingHeader').getAttribute('colspan'));
 
 			const selectedTags = [];
 			const selectedIndices = [];
@@ -78,37 +98,64 @@
 				ratings.sort((a, b) => a - b);
 
 				const row = table.insertRow(1);
-				const cell1 = row.insertCell(0);
-				const cell2 = row.insertCell(1);
-				const cell3 = row.insertCell(2);
+				const cells = [];
+				for (let i = 0; i < tagsSpan + indexSpan + ratingSpan; ++i)
+					cells.push(row.insertCell(i));
 
-				for (let t of tags) {
-					let id = t.replace(/ /g, '_');
-					cell1.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedTags)" id=${id}><label>${t}</label></span>&nbsp&nbsp&nbsp`;
+				for (let i = 0; i < tags.length; ++i) {
+					let cellIndex = parseInt(i / parseInt(tags.length/tagsSpan));
+					cellIndex = Math.min(cellIndex, tagsSpan - 1);
+					const id = tags[i].replace(/ /g, '_');
+
+					cells[cellIndex].innerHTML += generateInnerHTML(id, 'selectedTags', tags[i]);
 				}
 				
-				for (let i of indices) {
-					let id = i.replace(/ /g, '_');
-					cell2.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedIndices)" id=${id}><label>${i}</label></span>&nbsp&nbsp&nbsp`;
-				}
+
 				
-				for (let r of ratings) {
-					let id = ('' + r).replace(/ /g, '_');
-					cell3.innerHTML += `<span class="options"><input type="checkbox" onclick="handleCheck(this, selectedRatings)" id=${id}><label>${r}</label></span>&nbsp&nbsp&nbsp`;
+				for (let i  = 0; i < indices.length; ++i) {
+					let cellIndex = parseInt(i / parseInt(indices.length/indexSpan)) + tagsSpan;
+					cellIndex = Math.min(cellIndex, tagsSpan + indexSpan - 1);
+					const id = indices[i].replace(/ /g, '_');
+
+					cells[cellIndex].innerHTML += generateInnerHTML(id, 'selectedIndices', indices[i]);
 				}
-				
+
+
+				for (let i = 0; i < ratings.length; ++i) {
+					let cellIndex = parseInt(i / parseInt(ratings.length/ratingSpan)) + tagsSpan + indexSpan;
+					cellIndex = Math.min(cellIndex, tagsSpan + indexSpan + ratingSpan - 1);
+					const id = ('' + ratings[i]).replace(/ /g, '_');
+					cells[cellIndex].innerHTML += generateInnerHTML(id, 'selectedRatings', ratings[i]);
+				}
 
 				statusDiv.style.display = 'none';
 			}
 
 
+			function generateInnerHTML(id, arrName, txt) {
+				return `<span class="options" checked ="false" onclick="handleCheck(this, ${arrName})" id="${id}">${txt}</span><br><br>`;
+			}
 			
-			function handleCheck(input, arr) {
+			function handleCheck(span, arr) {
 				statusDiv.textContent = '';
 				statusDiv.style.display = 'none';
 
-				if (input.checked) arr.push(input.id);
-				else arr.splice(arr.indexOf(input.id), 1);
+				if (span.getAttribute('checked') == 'true') {
+					span.setAttribute('checked', 'false');
+					arr.splice(arr.indexOf(span.id), 1);
+				}
+				else {
+					span.setAttribute('checked', 'true');
+					arr.push(span.id);
+				}
+			}
+
+
+			function clearLinks() {
+				const links = document.getElementsByClassName('links');
+				for (let i = links.length - 1; i >= 0; --i) {
+					links[i].parentNode.removeChild(links[i]);
+				}
 			}
 
 
@@ -138,6 +185,7 @@
 
 
 				const anchor = document.createElement('a');
+				anchor.classList.add('links');
 				anchor.href = `http://www.codeforces.com/problemset/problem/${randomProblem.contestId}/${randomProblem.index}`;
 				anchor.textContent = `Problem ${randomProblem.index} from Contest Id ${randomProblem.contestId}`;
 				if (randomProblem.rating != undefined) anchor.textContent += ` with a rating of ${randomProblem.rating}`;
